@@ -1,4 +1,4 @@
-package io.github.luankuhlmann.compassUoldesafio3.domain;
+package io.github.luankuhlmann.compassUoldesafio3.domain.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

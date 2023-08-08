@@ -1,6 +1,6 @@
 package io.github.luankuhlmann.compassUoldesafio3.repository;
 
-import io.github.luankuhlmann.compassUoldesafio3.domain.Post;
+import io.github.luankuhlmann.compassUoldesafio3.domain.model.Post;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PostRepository extends JpaRepository<Post, Long> {

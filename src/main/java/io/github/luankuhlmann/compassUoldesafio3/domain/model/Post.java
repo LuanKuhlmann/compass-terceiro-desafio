@@ -1,4 +1,4 @@
-package io.github.luankuhlmann.compassUoldesafio3.domain;
+package io.github.luankuhlmann.compassUoldesafio3.domain.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -29,16 +29,4 @@ public class Post {
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL)
     private List<PostHistory> history = new ArrayList<>();
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Post post = (Post) o;
-        return Objects.equals(id, post.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
-    }
 }

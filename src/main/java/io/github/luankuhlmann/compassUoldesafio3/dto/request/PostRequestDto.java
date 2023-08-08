@@ -1,4 +1,4 @@
-package io.github.luankuhlmann.compassUoldesafio3.dto;
+package io.github.luankuhlmann.compassUoldesafio3.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
