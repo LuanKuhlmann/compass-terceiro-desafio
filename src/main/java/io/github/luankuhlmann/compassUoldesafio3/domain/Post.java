@@ -26,9 +26,6 @@ public class Post {
     private String title;
     private String body;
 
-    private List<Comment> comments = new ArrayList<>();
-    private List<PostHistory> histories = new ArrayList<>();
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
