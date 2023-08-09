@@ -6,8 +6,9 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
+@Setter
 @ToString
-public class PostRequestDto {
+public class PostDto {
 
     @JsonProperty("id")
     private Long id;

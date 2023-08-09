@@ -1,5 +1,6 @@
 package io.github.luankuhlmann.compassUoldesafio3.domain.model;
 
+import io.github.luankuhlmann.compassUoldesafio3.domain.PostState;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -8,7 +9,6 @@ import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 @Getter
 @Setter
@@ -22,6 +22,9 @@ public class Post {
     private Long id;
     private String title;
     private String body;
+
+    @Enumerated(EnumType.STRING)
+    private PostState state;
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL)
     private List<Comment> comments = new ArrayList<>();
