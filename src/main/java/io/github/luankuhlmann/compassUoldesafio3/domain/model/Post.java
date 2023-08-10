@@ -1,6 +1,5 @@
 package io.github.luankuhlmann.compassUoldesafio3.domain.model;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -10,11 +9,12 @@ import lombok.Setter;
 import java.util.ArrayList;
 import java.util.List;
 
+@Entity
+@Table(name = "post")
+@NoArgsConstructor
+@AllArgsConstructor
 @Getter
 @Setter
-@AllArgsConstructor
-@NoArgsConstructor
-@Entity
 public class Post {
 
     @Id
@@ -23,14 +23,26 @@ public class Post {
     private String title;
     private String body;
 
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "post_id", referencedColumnName = "id")
     private List<Comment> comments = new ArrayList<>();
 
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "post_id", referencedColumnName = "id")
     private List<PostHistory> histories;
 
-    private boolean status;
+//    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+//    @JsonManagedReference
+//    private List<Comment> comments = new ArrayList<>();
+//
+//    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+//    @JsonManagedReference
+//    private List<PostHistory> histories;
 
+
+    public Post(Long id) {
+        this.id = id;
+        this.comments = new ArrayList<>();
+        this.histories = new ArrayList<>();
+    }
 }

@@ -1,24 +1,22 @@
 package io.github.luankuhlmann.compassUoldesafio3.domain.model;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import io.github.luankuhlmann.compassUoldesafio3.domain.PostState;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.Instant;
 
+@Entity
+@Table(name = "history")
+@AllArgsConstructor
+@NoArgsConstructor
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Entity
+@ToString
 public class PostHistory {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Temporal(TemporalType.TIMESTAMP)
@@ -27,13 +25,17 @@ public class PostHistory {
     @Enumerated(EnumType.STRING)
     private PostState status;
 
-    @ManyToOne
-    @JoinColumn(name = "post_id")
-    @JsonBackReference
-    private Post post;
+//    @ManyToOne
+//    @JoinColumn(name = "post_id")
+//    @JsonBackReference
+//    private Post post;
 
-    public PostHistory(Instant date, PostState status) {
-        this.date = date;
+    @Column(name = "post_id")
+    Long postId;
+
+    public PostHistory(PostState status, Long postId) {
         this.status = status;
+        this.postId = postId;
+        this.date = Instant.now();
     }
 }

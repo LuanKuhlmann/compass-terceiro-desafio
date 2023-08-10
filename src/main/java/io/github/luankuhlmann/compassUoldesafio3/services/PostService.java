@@ -12,8 +12,6 @@ public interface PostService {
 
     Post processPost(Long postId);
 
-    Post createdHistory(Long postId, Post post);
-
     Post postFindHistory(Long postId, Post post, List<PostHistory> histories);
 
     Post postOkHistory(Long postId, Post post, List<PostHistory> histories);
@@ -21,6 +19,8 @@ public interface PostService {
     Post commentsFindHistory(Long postId, Post post, List<PostHistory> histories);
 
     Post commentsOkHistory(Long postId, Post post, List<PostHistory> histories);
+
+    Post enabledHistory(Long postId, Post post, List<PostHistory> histories);
 
     void disablePost(Long postId);
 
