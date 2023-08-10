@@ -1,13 +1,15 @@
-package io.github.luankuhlmann.compassUoldesafio3.dto.request;
+package io.github.luankuhlmann.compassUoldesafio3.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.github.luankuhlmann.compassUoldesafio3.domain.model.PostHistory;
 import lombok.*;
+
+import java.util.List;
 
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
-@ToString
 public class PostDto {
 
     @JsonProperty("id")
@@ -18,5 +20,11 @@ public class PostDto {
 
     @JsonProperty("body")
     private String body;
+
+    @JsonProperty("comments")
+    private CommentDto comments;
+
+    @JsonProperty("history")
+    private List<PostHistory> history;
 
 }
