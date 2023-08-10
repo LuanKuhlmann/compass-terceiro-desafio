@@ -56,21 +56,40 @@ public class PostServiceImpl implements PostService {
 
         if (postRepository.findById(postId).isPresent()) throw new PostAlreadyInProcessException("Id: %s is already in use", postId);
 
+        return createdHistory(postId, post);
+    }
+
+    @Override
+    public Post createdHistory(Long postId, Post post) {
         List<PostHistory> histories = new ArrayList<>();
         PostHistory createdHistory = new PostHistory(Instant.now(Clock.systemDefaultZone()), PostState.CREATED);
         postHistoryRepository.save(createdHistory);
         histories.add(createdHistory);
 
+        return postFindHistory(postId, post, histories);
+    }
+
+    @Override
+    public Post postFindHistory(Long postId, Post post, List<PostHistory> histories) {
         post = externalApiClient.findPostById(postId);
         PostHistory postFindHistory = new PostHistory(Instant.now(Clock.systemDefaultZone()), PostState.POST_FIND);
         postHistoryRepository.save(postFindHistory);
         histories.add(postFindHistory);
 
+        return postOkHistory(postId, post, histories);
+    }
 
+    @Override
+    public Post postOkHistory(Long postId, Post post, List<PostHistory> histories) {
         PostHistory postOkHistory = new PostHistory(Instant.now(Clock.systemDefaultZone()), PostState.POST_OK);
         postHistoryRepository.save(postOkHistory);
         histories.add(postOkHistory);
 
+        return commentsFindHistory(postId, post, histories);
+    }
+
+    @Override
+    public Post commentsFindHistory(Long postId, Post post, List<PostHistory> histories) {
         List<Comment> comments = new ArrayList<>();
         List<Comment> findComments = externalApiClient.findCommentByPostId(postId);
 
@@ -79,18 +98,21 @@ public class PostServiceImpl implements PostService {
             comments.add(comment);
         }
 
-        PostHistory commentFindHistory = new PostHistory(Instant.now(Clock.systemDefaultZone()), PostState.POST_OK);
+        PostHistory commentFindHistory = new PostHistory(Instant.now(Clock.systemDefaultZone()), PostState.COMMENTS_FIND);
         postHistoryRepository.save(commentFindHistory);
         histories.add(commentFindHistory);
-
         post.setComments(comments);
 
-        PostHistory commentOkHistory = new PostHistory(Instant.now(Clock.systemDefaultZone()), PostState.POST_OK);
+        return commentsOkHistory(postId, post, histories);
+    }
+
+    @Override
+    public Post commentsOkHistory(Long postId, Post post, List<PostHistory> histories) {
+        PostHistory commentOkHistory = new PostHistory(Instant.now(Clock.systemDefaultZone()), PostState.COMMENTS_OK);
         postHistoryRepository.save(commentOkHistory);
         histories.add(commentOkHistory);
 
         post.setHistories(histories);
-
         postRepository.save(post);
 
         return post;
