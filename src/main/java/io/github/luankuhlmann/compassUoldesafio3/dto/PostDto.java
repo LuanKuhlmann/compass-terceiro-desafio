@@ -22,7 +22,7 @@ public class PostDto {
     private String body;
 
     @JsonProperty("comments")
-    private CommentDto comments;
+    private List<CommentDto> comments;
 
     @JsonProperty("history")
     private List<PostHistory> history;

@@ -2,7 +2,7 @@ package io.github.luankuhlmann.compassUoldesafio3.client;
 
 import io.github.luankuhlmann.compassUoldesafio3.domain.model.Comment;
 import io.github.luankuhlmann.compassUoldesafio3.domain.model.Post;
-import io.github.luankuhlmann.compassUoldesafio3.dto.CommentDto;
+import io.github.luankuhlmann.compassUoldesafio3.dto.PostDto;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,10 +15,10 @@ import java.util.List;
 public interface ExternalApiClient {
 
     @GetMapping
-    List<Post> getAllPost();
+    List<PostDto> getAllPost();
 
     @GetMapping("/{postId}")
-    Post findPostById(@PathVariable("postId") long postId);
+    PostDto findPostById(@PathVariable("postId") long postId);
 
     @GetMapping("/{postId}/comments")
     List<Comment> findCommentByPostId(@PathVariable("postId") long postId);
