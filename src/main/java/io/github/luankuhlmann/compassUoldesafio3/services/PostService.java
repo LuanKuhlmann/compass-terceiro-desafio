@@ -1,6 +1,7 @@
 package io.github.luankuhlmann.compassUoldesafio3.services;
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.github.luankuhlmann.compassUoldesafio3.domain.model.Post;
 import io.github.luankuhlmann.compassUoldesafio3.domain.model.PostHistory;
 import io.github.luankuhlmann.compassUoldesafio3.dto.CommentDto;
@@ -11,9 +12,9 @@ import java.util.List;
 public interface PostService {
 
 
-    void processPost(Long postId);
+    void processPost(Long postId) throws JsonProcessingException;
 
-    void postFindHistory(Long postId, List<PostHistory> histories);
+    void postFindHistory(Long postId, List<PostHistory> histories) throws JsonProcessingException;
 
     void postOkHistory(Long postId, PostDto postDto, List<PostHistory> histories);
 
@@ -25,7 +26,7 @@ public interface PostService {
 
     void disablePost(Long postId);
 
-    void reprocessPost(Long postId);
+    void reprocessPost(Long postId) throws JsonProcessingException;
 
     List<Post> queryPosts();
 

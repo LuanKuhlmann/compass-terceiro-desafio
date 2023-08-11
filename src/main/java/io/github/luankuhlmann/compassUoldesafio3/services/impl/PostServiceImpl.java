@@ -1,6 +1,9 @@
 package io.github.luankuhlmann.compassUoldesafio3.services.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.luankuhlmann.compassUoldesafio3.client.ExternalApiClient;
+import io.github.luankuhlmann.compassUoldesafio3.client.mqueues.MessagePublisher;
 import io.github.luankuhlmann.compassUoldesafio3.domain.PostState;
 import io.github.luankuhlmann.compassUoldesafio3.domain.model.Comment;
 import io.github.luankuhlmann.compassUoldesafio3.domain.model.Post;
@@ -40,6 +43,9 @@ public class PostServiceImpl implements PostService {
     @Autowired
     private final ModelMapper mapper;
 
+    @Autowired
+    private final MessagePublisher messagePublisher;
+
     private Post mapPostToEntity(PostDto postDto) {
         return mapper.map(postDto, Post.class);
     }
@@ -50,7 +56,7 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Async
-    public void processPost(Long postId) {
+    public void processPost(Long postId) throws JsonProcessingException {
         if (postId < 1 || postId > 100) throw new InvalidPostIdValueException("Id must be between");
 
         Post post = new Post();
@@ -69,12 +75,16 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public void postFindHistory(Long postId, List<PostHistory> histories) {
+    public void postFindHistory(Long postId, List<PostHistory> histories) throws JsonProcessingException {
         PostDto postDto = externalApiClient.findPostById(postId);
 
         PostHistory postFindHistory = new PostHistory(PostState.POST_FIND, postId);
         postHistoryRepository.save(postFindHistory);
         histories.add(postFindHistory);
+
+        ObjectMapper mapper = new ObjectMapper();
+        String messageStr = mapper.writeValueAsString(postDto);
+        messagePublisher.sendMessage("demo", messageStr);
 
         postOkHistory(postId, postDto, histories);
     }
@@ -155,7 +165,7 @@ public class PostServiceImpl implements PostService {
         }
     }
 
-    public void reprocessPost(Long postId) {
+    public void reprocessPost(Long postId) throws JsonProcessingException {
         if (postId < 0 || postId > 100) throw new InvalidPostIdValueException("Id must be between 0 and 100");
 
         Optional<Post> postOptional = postRepository.findPostById(postId);
