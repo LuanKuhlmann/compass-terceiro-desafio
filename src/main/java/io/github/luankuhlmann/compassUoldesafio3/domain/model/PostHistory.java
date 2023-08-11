@@ -25,11 +25,6 @@ public class PostHistory {
     @Enumerated(EnumType.STRING)
     private PostState status;
 
-//    @ManyToOne
-//    @JoinColumn(name = "post_id")
-//    @JsonBackReference
-//    private Post post;
-
     @Column(name = "post_id")
     Long postId;
 

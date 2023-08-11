@@ -31,15 +31,6 @@ public class Post {
     @JoinColumn(name = "post_id", referencedColumnName = "id")
     private List<PostHistory> histories;
 
-//    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
-//    @JsonManagedReference
-//    private List<Comment> comments = new ArrayList<>();
-//
-//    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
-//    @JsonManagedReference
-//    private List<PostHistory> histories;
-
-
     public Post(Long id) {
         this.id = id;
         this.comments = new ArrayList<>();

@@ -5,6 +5,7 @@ import io.github.luankuhlmann.compassUoldesafio3.domain.PostState;
 import io.github.luankuhlmann.compassUoldesafio3.domain.model.Comment;
 import io.github.luankuhlmann.compassUoldesafio3.domain.model.Post;
 import io.github.luankuhlmann.compassUoldesafio3.domain.model.PostHistory;
+import io.github.luankuhlmann.compassUoldesafio3.dto.CommentDto;
 import io.github.luankuhlmann.compassUoldesafio3.dto.PostDto;
 import io.github.luankuhlmann.compassUoldesafio3.exceptions.InvalidPostIdValueException;
 import io.github.luankuhlmann.compassUoldesafio3.exceptions.PostAlreadyInProcessException;
@@ -15,6 +16,7 @@ import io.github.luankuhlmann.compassUoldesafio3.services.PostService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 
@@ -35,27 +37,26 @@ public class PostServiceImpl implements PostService {
     @Autowired
     private final ExternalApiClient externalApiClient;
 
-    private ModelMapper mapper;
+    @Autowired
+    private final ModelMapper mapper;
 
-    private PostDto mapToDTO(Post post) {
-        PostDto postDto = mapper.map(post, PostDto.class);
-        return postDto;
+    private Post mapPostToEntity(PostDto postDto) {
+        return mapper.map(postDto, Post.class);
     }
 
-    private Post mapToEntity(PostDto postDto) {
-        Post post = mapper.map(postDto, Post.class);
-        return post;
+    private Comment mapCommentToEntity(CommentDto commentDto) {
+        return mapper.map(commentDto, Comment.class);
     }
 
     @Override
-    public Post processPost(Long postId) {
-
-        if (postId < 0 || postId > 100) throw new InvalidPostIdValueException("Id should be between 0 and 100");
+    @Async
+    public void processPost(Long postId) {
+        if (postId < 1 || postId > 100) throw new InvalidPostIdValueException("Id must be between");
 
         Post post = new Post();
         post.setId(postId);
 
-        if (postRepository.findById(postId).isPresent()) throw new PostAlreadyInProcessException("Id: %s is already in use", postId);
+        if (postRepository.findById(postId).isPresent()) throw new PostAlreadyInProcessException(String.format("Id %d is already in use", postId));
 
         postRepository.save(post);
 
@@ -64,70 +65,67 @@ public class PostServiceImpl implements PostService {
         postHistoryRepository.save(createdHistory);
         histories.add(createdHistory);
 
-        return postFindHistory(postId, post, histories);
-
+        postFindHistory(postId, histories);
     }
 
     @Override
-    public Post postFindHistory(Long postId, Post post, List<PostHistory> histories) {
-
-        post = externalApiClient.findPostById(postId);
+    public void postFindHistory(Long postId, List<PostHistory> histories) {
+        PostDto postDto = externalApiClient.findPostById(postId);
 
         PostHistory postFindHistory = new PostHistory(PostState.POST_FIND, postId);
         postHistoryRepository.save(postFindHistory);
         histories.add(postFindHistory);
 
-        return postOkHistory(postId, post, histories);
+        postOkHistory(postId, postDto, histories);
     }
 
     @Override
-    public Post postOkHistory(Long postId, Post post, List<PostHistory> histories) {
+    public void postOkHistory(Long postId, PostDto postDto, List<PostHistory> histories) {
+        Post post = mapPostToEntity(postDto);
 
         PostHistory postOkHistory = new PostHistory(PostState.POST_OK, postId);
         postHistoryRepository.save(postOkHistory);
         histories.add(postOkHistory);
 
-        post.setHistories(histories);
 
+        post.setHistories(histories);
         postRepository.save(post);
 
-        return commentsFindHistory(postId, post, histories);
+        commentsFindHistory(postId, post, histories);
     }
 
     @Override
-    public Post commentsFindHistory(Long postId, Post post, List<PostHistory> histories) {
-
-        List<Comment> comments = new ArrayList<>();
-
-        List<Comment> findComments = externalApiClient.findCommentByPostId(postId);
-
-        for (Comment foundComment : findComments) {
-            Comment comment = new Comment(foundComment.getId(), foundComment.getBody(), postId);
-            comments.add(comment);
-        }
+    public void commentsFindHistory(Long postId, Post post, List<PostHistory> histories) {
+        List<CommentDto> findComments = externalApiClient.findCommentByPostId(postId);
 
         PostHistory commentFindHistory = new PostHistory(PostState.COMMENTS_FIND, postId);
         postHistoryRepository.save(commentFindHistory);
         histories.add(commentFindHistory);
 
-        post.setComments(comments);
-
-        return commentsOkHistory(postId, post, histories);
+        commentsOkHistory(postId, post, histories, findComments);
     }
 
     @Override
-    public Post commentsOkHistory(Long postId, Post post, List<PostHistory> histories) {
+    public void commentsOkHistory(Long postId, Post post, List<PostHistory> histories, List<CommentDto> findComments) {
+        List<Comment> comments = new ArrayList<>();
+
+        for (CommentDto foundComment : findComments) {
+            CommentDto commentDto = new CommentDto(foundComment.getId(), foundComment.getBody());
+            Comment comment = mapCommentToEntity(commentDto);
+            comments.add(comment);
+        }
+
+        post.setComments(comments);
 
         PostHistory commentOkHistory = new PostHistory(PostState.COMMENTS_OK, postId);
         postHistoryRepository.save(commentOkHistory);
         histories.add(commentOkHistory);
 
-        return enabledHistory(postId, post, histories);
+        enabledHistory(postId, post, histories);
     }
 
     @Override
-    public Post enabledHistory(Long postId, Post post, List<PostHistory> histories) {
-
+    public void enabledHistory(Long postId, Post post, List<PostHistory> histories) {
         PostHistory enabledHistory = new PostHistory(PostState.ENABLED, postId);
         postHistoryRepository.save(enabledHistory);
         histories.add(enabledHistory);
@@ -135,17 +133,14 @@ public class PostServiceImpl implements PostService {
         post.setHistories(histories);
 
         postRepository.save(post);
-
-        return post;
     }
 
 
     public void disablePost(Long postId) {
-
-        if (postId < 0 || postId > 100) throw new InvalidPostIdValueException("Id should be between 0 and 100");
+        if (postId < 0 || postId > 100) throw new InvalidPostIdValueException("Id must be between 0 and 100");
+        if (postRepository.findById(postId).isEmpty()) throw new InvalidPostIdValueException(String.format("Id %d is not present on database", postId));
 
         Optional<Post> postOptional = postRepository.findPostById(postId);
-
         Post post = postOptional.get();
 
         List<PostHistory> histories = post.getHistories();
@@ -161,11 +156,9 @@ public class PostServiceImpl implements PostService {
     }
 
     public void reprocessPost(Long postId) {
-
-        if (postId < 0 || postId > 100) throw new InvalidPostIdValueException("Id should be between 0 and 100");
+        if (postId < 0 || postId > 100) throw new InvalidPostIdValueException("Id must be between 0 and 100");
 
         Optional<Post> postOptional = postRepository.findPostById(postId);
-
         Post post = postOptional.get();
 
         List<PostHistory> histories = post.getHistories();
@@ -181,14 +174,11 @@ public class PostServiceImpl implements PostService {
         post.setHistories(histories);
         postRepository.save(post);
 
-        postFindHistory(postId, post, histories);
-
+        postFindHistory(postId, histories);
     }
 
     public List<Post> queryPosts() {
-        var response = postRepository.findAll();
-
-        return response;
+        return postRepository.findAll();
     }
 
 }

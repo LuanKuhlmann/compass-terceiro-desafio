@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ResponseStatus(code = HttpStatus.CONFLICT)
 public class PostAlreadyInProcessException extends RuntimeException{
-    public PostAlreadyInProcessException(String msg, Long postId) {
+    public PostAlreadyInProcessException(String msg) {
         super(msg);
     }
 }

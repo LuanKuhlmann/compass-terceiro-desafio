@@ -20,10 +20,11 @@ public class PostController {
     private final PostService postService;
 
     @PostMapping("/{postId}")
-    public ResponseEntity<Post> processPost(@PathVariable(name = "postId") @Min(value = 1, message = "id must be between 1 and 100") @Max(value = 100, message = "id must be between 1 and 100") Long postId) {
-        Post response = postService.processPost(postId);
+    public ResponseEntity<Void> processPost(@PathVariable(name = "postId") @Min(value = 1, message = "id must be between 1 and 100") @Max(value = 100, message = "id must be between 1 and 100") Long postId) {
 
-        return ResponseEntity.ok(response);
+        postService.processPost(postId);
+
+        return ResponseEntity.ok(null);
     }
 
     @DeleteMapping("/{postId}")
