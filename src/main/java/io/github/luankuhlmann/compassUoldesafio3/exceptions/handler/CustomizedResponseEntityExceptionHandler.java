@@ -1,9 +1,6 @@
 package io.github.luankuhlmann.compassUoldesafio3.exceptions.handler;
 
-import io.github.luankuhlmann.compassUoldesafio3.exceptions.ExceptionResponse;
-import io.github.luankuhlmann.compassUoldesafio3.exceptions.InvalidPostIdValueException;
-import io.github.luankuhlmann.compassUoldesafio3.exceptions.PostAlreadyInProcessException;
-import io.github.luankuhlmann.compassUoldesafio3.exceptions.StatusNotValidException;
+import io.github.luankuhlmann.compassUoldesafio3.exceptions.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -55,6 +52,16 @@ public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExce
                 request.getDescription(false));
 
         return new ResponseEntity<ExceptionResponse>(exceptionResponse, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    public final ResponseEntity<ExceptionResponse> handlerCommentNotFoundException(Exception e, WebRequest request) {
+        ExceptionResponse exceptionResponse = new ExceptionResponse(
+                Instant.now(Clock.systemDefaultZone()),
+                e.getMessage(),
+                request.getDescription(false));
+
+        return new ResponseEntity<ExceptionResponse>(exceptionResponse, HttpStatus.NOT_FOUND);
     }
 
 

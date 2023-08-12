@@ -16,11 +16,13 @@ public interface PostService {
 
     void postFindHistory(Long postId, List<PostHistory> histories) throws JsonProcessingException;
 
-    void postOkHistory(Long postId, PostDto postDto, List<PostHistory> histories);
+    void postOkHistory(Long postId, PostDto postDto, List<PostHistory> histories) throws JsonProcessingException;
 
-    void commentsFindHistory(Long postId, Post post, List<PostHistory> histories);
+    void commentsFindHistory(Long postId, Post post, List<PostHistory> histories) throws JsonProcessingException;
 
     void commentsOkHistory(Long postId, Post post, List<PostHistory> histories, List<CommentDto> findComments);
+
+    void failedHistory(Long postId, List<PostHistory> histories);
 
     void enabledHistory(Long postId, Post post, List<PostHistory> histories);
 

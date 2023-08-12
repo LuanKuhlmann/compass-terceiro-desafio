@@ -1,5 +1,6 @@
 package io.github.luankuhlmann.compassUoldesafio3.domain.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -23,17 +24,17 @@ public class Post {
     private String title;
     private String body;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "post_id", referencedColumnName = "id")
     private List<Comment> comments = new ArrayList<>();
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "post_id", referencedColumnName = "id")
     private List<PostHistory> histories;
 
-    public Post(Long id) {
-        this.id = id;
-        this.comments = new ArrayList<>();
-        this.histories = new ArrayList<>();
-    }
+//    public Post(Long id) {
+//        this.id = id;
+//        this.comments = new ArrayList<>();
+//        this.histories = new ArrayList<>();
+//    }
 }

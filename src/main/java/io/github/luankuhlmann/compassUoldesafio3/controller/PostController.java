@@ -33,14 +33,14 @@ public class PostController {
     public ResponseEntity<Void> disablePost(@PathVariable(name = "postId") @Min(value = 1, message = "id must be between 1 and 100") @Max(value = 100, message = "id must be between 1 and 100") Long postId){
         postService.disablePost(postId);
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(null);
     }
 
     @PutMapping("/{postId}")
-    public ResponseEntity<Post> reprocessPost(@PathVariable(name = "postId") @Min(value = 1, message = "id must be between 1 and 100") @Max(value = 100, message = "id must be between 1 and 100") Long postId) throws JsonProcessingException {
+    public ResponseEntity<Void> reprocessPost(@PathVariable(name = "postId") @Min(value = 1, message = "id must be between 1 and 100") @Max(value = 100, message = "id must be between 1 and 100") Long postId) throws JsonProcessingException {
         postService.reprocessPost(postId);
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(null);
     }
 
     @GetMapping

@@ -11,6 +11,7 @@ import org.springframework.jms.core.JmsTemplate;
 @EnableJms
 public class JmsConfig {
 
+
     @Bean
     public ActiveMQConnectionFactory connectionFactory() {
         ActiveMQConnectionFactory activeMQConnectionFactory = new ActiveMQConnectionFactory();

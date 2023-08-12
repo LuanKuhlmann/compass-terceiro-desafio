@@ -10,6 +10,7 @@ import io.github.luankuhlmann.compassUoldesafio3.domain.model.Post;
 import io.github.luankuhlmann.compassUoldesafio3.domain.model.PostHistory;
 import io.github.luankuhlmann.compassUoldesafio3.dto.CommentDto;
 import io.github.luankuhlmann.compassUoldesafio3.dto.PostDto;
+import io.github.luankuhlmann.compassUoldesafio3.exceptions.NotFoundException;
 import io.github.luankuhlmann.compassUoldesafio3.exceptions.InvalidPostIdValueException;
 import io.github.luankuhlmann.compassUoldesafio3.exceptions.PostAlreadyInProcessException;
 import io.github.luankuhlmann.compassUoldesafio3.exceptions.StatusNotValidException;
@@ -44,6 +45,9 @@ public class PostServiceImpl implements PostService {
     private final ModelMapper mapper;
 
     @Autowired
+    private final ObjectMapper objectMapper;
+
+    @Autowired
     private final MessagePublisher messagePublisher;
 
     private Post mapPostToEntity(PostDto postDto) {
@@ -54,10 +58,17 @@ public class PostServiceImpl implements PostService {
         return mapper.map(commentDto, Comment.class);
     }
 
+    private PostHistory createHistories(PostState state, Long postId) {
+        PostHistory status = new PostHistory(state, postId);
+        postHistoryRepository.save(status);
+
+        return status;
+    }
+
     @Override
     @Async
     public void processPost(Long postId) throws JsonProcessingException {
-        if (postId < 1 || postId > 100) throw new InvalidPostIdValueException("Id must be between");
+        if (postId < 1 || postId > 100) throw new InvalidPostIdValueException("Id must be between 1 & 100");
 
         Post post = new Post();
         post.setId(postId);
@@ -67,9 +78,14 @@ public class PostServiceImpl implements PostService {
         postRepository.save(post);
 
         List<PostHistory> histories = new ArrayList<>();
-        PostHistory createdHistory = new PostHistory(PostState.CREATED, postId);
-        postHistoryRepository.save(createdHistory);
-        histories.add(createdHistory);
+        var state = createHistories(PostState.CREATED, postId);
+        histories.add(state);
+
+        post.setHistories(histories);
+
+        PostState postStatus = post.getHistories().get(post.getHistories().size()-1).getStatus();
+
+        if (!postStatus.equals(PostState.CREATED)) throw new StatusNotValidException("Post state: %s is not valid for this action", postStatus);
 
         postFindHistory(postId, histories);
     }
@@ -78,39 +94,55 @@ public class PostServiceImpl implements PostService {
     public void postFindHistory(Long postId, List<PostHistory> histories) throws JsonProcessingException {
         PostDto postDto = externalApiClient.findPostById(postId);
 
-        PostHistory postFindHistory = new PostHistory(PostState.POST_FIND, postId);
-        postHistoryRepository.save(postFindHistory);
-        histories.add(postFindHistory);
+        if(postDto == null) {
+            failedHistory(postId, histories);
+            throw new NotFoundException("Post was not found");
+        }
 
-        ObjectMapper mapper = new ObjectMapper();
-        String messageStr = mapper.writeValueAsString(postDto);
-        messagePublisher.sendMessage("demo", messageStr);
+        String messageStr = objectMapper.writeValueAsString(postDto);
+        messagePublisher.sendMessage("process_posts", messageStr);
+
+        var state = createHistories(PostState.POST_FIND, postId);
+        histories.add(state);
 
         postOkHistory(postId, postDto, histories);
     }
 
     @Override
-    public void postOkHistory(Long postId, PostDto postDto, List<PostHistory> histories) {
+    public void postOkHistory(Long postId, PostDto postDto, List<PostHistory> histories) throws JsonProcessingException {
         Post post = mapPostToEntity(postDto);
 
-        PostHistory postOkHistory = new PostHistory(PostState.POST_OK, postId);
-        postHistoryRepository.save(postOkHistory);
-        histories.add(postOkHistory);
-
+        var state = createHistories(PostState.POST_OK, postId);
+        histories.add(state);
 
         post.setHistories(histories);
         postRepository.save(post);
+
+        PostState postStatus = post.getHistories().get(post.getHistories().size()-1).getStatus();
+
+        if (!postStatus.equals(PostState.POST_OK)) throw new StatusNotValidException("Post state: %s is not valid for this action", postStatus);
 
         commentsFindHistory(postId, post, histories);
     }
 
     @Override
-    public void commentsFindHistory(Long postId, Post post, List<PostHistory> histories) {
+    public void commentsFindHistory(Long postId, Post post, List<PostHistory> histories) throws JsonProcessingException {
         List<CommentDto> findComments = externalApiClient.findCommentByPostId(postId);
 
-        PostHistory commentFindHistory = new PostHistory(PostState.COMMENTS_FIND, postId);
-        postHistoryRepository.save(commentFindHistory);
-        histories.add(commentFindHistory);
+        if(findComments.isEmpty()) {
+            failedHistory(postId, histories);
+            throw new NotFoundException(String.format("Couldn't find comments for post id: %d" , postId));
+        }
+
+        var state = createHistories(PostState.COMMENTS_FIND, postId);
+        histories.add(state);
+
+        post.setHistories(histories);
+        postRepository.save(post);
+
+        PostState postStatus = post.getHistories().get(post.getHistories().size()-1).getStatus();
+
+        if (!postStatus.equals(PostState.COMMENTS_FIND)) throw new StatusNotValidException("Post state: %s is not valid for this action", postStatus);
 
         commentsOkHistory(postId, post, histories, findComments);
     }
@@ -127,9 +159,15 @@ public class PostServiceImpl implements PostService {
 
         post.setComments(comments);
 
-        PostHistory commentOkHistory = new PostHistory(PostState.COMMENTS_OK, postId);
-        postHistoryRepository.save(commentOkHistory);
-        histories.add(commentOkHistory);
+        var state = createHistories(PostState.COMMENTS_OK, postId);
+        histories.add(state);
+
+        post.setHistories(histories);
+        postRepository.save(post);
+
+        PostState postStatus = post.getHistories().get(post.getHistories().size()-1).getStatus();
+
+        if (!postStatus.equals(PostState.COMMENTS_OK)) throw new StatusNotValidException("Post state: %s is not valid for this action", postStatus);
 
         enabledHistory(postId, post, histories);
     }
@@ -141,45 +179,65 @@ public class PostServiceImpl implements PostService {
         histories.add(enabledHistory);
 
         post.setHistories(histories);
+        postRepository.save(post);
+    }
+
+    @Override
+    public void failedHistory(Long postId, List<PostHistory> histories) {
+        var state = createHistories(PostState.FAILED, postId);
+        histories.add(state);
+
+        Optional<Post> postOptional = postRepository.findPostById(postId);
+
+        if(postOptional.isEmpty()) throw new InvalidPostIdValueException(String.format("ID %d is not present on database", postId));
+
+        Post post = postOptional.get();
+        post.setHistories(histories);
 
         postRepository.save(post);
+
+        disablePost(postId);
     }
 
 
     public void disablePost(Long postId) {
-        if (postId < 0 || postId > 100) throw new InvalidPostIdValueException("Id must be between 0 and 100");
+        if (postId < 0 || postId > 100) throw new InvalidPostIdValueException("Id must be between 1 & 100");
         if (postRepository.findById(postId).isEmpty()) throw new InvalidPostIdValueException(String.format("Id %d is not present on database", postId));
 
         Optional<Post> postOptional = postRepository.findPostById(postId);
+
+        if(postOptional.isEmpty()) throw new InvalidPostIdValueException(String.format("ID %d is not present on database", postId));
+
         Post post = postOptional.get();
 
         List<PostHistory> histories = post.getHistories();
-        PostState state = post.getHistories().get(post.getHistories().size()-1).getStatus();
+        PostState postStatus = post.getHistories().get(post.getHistories().size()-1).getStatus();
 
-        if (state.equals(PostState.ENABLED)) {
-            PostHistory disabledHistory = new PostHistory(PostState.DISABLED, post.getId());
-            postHistoryRepository.save(disabledHistory);
-            histories.add(disabledHistory);
+        if (!postStatus.equals(PostState.ENABLED) && postStatus.equals(PostState.FAILED)) throw new StatusNotValidException("Post state: %s is not valid for this action", postStatus);
 
-            post.setHistories(histories);
-        }
+        var state = createHistories(PostState.DISABLED, postId);
+        histories.add(state);
+
+        post.setHistories(histories);
     }
 
     public void reprocessPost(Long postId) throws JsonProcessingException {
         if (postId < 0 || postId > 100) throw new InvalidPostIdValueException("Id must be between 0 and 100");
 
         Optional<Post> postOptional = postRepository.findPostById(postId);
+
+        if(postOptional.isEmpty()) throw new InvalidPostIdValueException(String.format("ID %d is not present on database", postId));
+
         Post post = postOptional.get();
 
         List<PostHistory> histories = post.getHistories();
 
-        PostState state = post.getHistories().get(post.getHistories().size()-1).getStatus();
+        PostState postStatus = post.getHistories().get(post.getHistories().size()-1).getStatus();
 
-        if (!state.equals(PostState.ENABLED) && state.equals(PostState.DISABLED)) throw new StatusNotValidException("Post state: %s is not valid for this action", state);
+        if (!postStatus.equals(PostState.ENABLED) && postStatus.equals(PostState.DISABLED)) throw new StatusNotValidException("Post state: %s is not valid for this action", postStatus);
 
-        PostHistory updatingHistory = new PostHistory(PostState.UPDATING, post.getId());
-        postHistoryRepository.save(updatingHistory);
-        histories.add(updatingHistory);
+        var state = createHistories(PostState.UPDATING, postId);
+        histories.add(state);
 
         post.setHistories(histories);
         postRepository.save(post);
@@ -188,6 +246,8 @@ public class PostServiceImpl implements PostService {
     }
 
     public List<Post> queryPosts() {
+        if(postRepository.findAll().isEmpty()) throw new NotFoundException("Database is empty!");
+
         return postRepository.findAll();
     }
 
