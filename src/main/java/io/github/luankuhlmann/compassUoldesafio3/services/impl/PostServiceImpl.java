@@ -17,6 +17,7 @@ import io.github.luankuhlmann.compassUoldesafio3.exceptions.StatusNotValidExcept
 import io.github.luankuhlmann.compassUoldesafio3.repository.PostHistoryRepository;
 import io.github.luankuhlmann.compassUoldesafio3.repository.PostRepository;
 import io.github.luankuhlmann.compassUoldesafio3.services.PostService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -31,6 +32,7 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional
 public class PostServiceImpl implements PostService {
 
     @Autowired
@@ -52,84 +54,54 @@ public class PostServiceImpl implements PostService {
     private final MessagePublisher messagePublisher;
 
     @Override
+    @Async
     public void processPost(Long postId) throws JsonProcessingException {
+        log.info("PROCESSING post");
         idSizeValidation(postId);
-        log.info("Processing post");
-        Post post = new Post();
-        post.setId(postId);
+        if (postRepository.findById(postId).isPresent())
+            throw new PostAlreadyInProcessException(String.format("Id %d is already in use", postId));
 
-        if (postRepository.findById(postId).isPresent()) throw new PostAlreadyInProcessException(String.format("Id %d is already in use", postId));
+        PostDto postDto = externalApiClient.findPostById(postId);
+
+        Post post = mapPostToEntity(postDto);
         postRepository.save(post);
 
         List<PostHistory> histories = new ArrayList<>();
-        var state = createHistories(PostState.CREATED, postId);
-        histories.add(state);
-        post.setHistories(histories);
-
-        PostState postStatus = post.getHistories().get(post.getHistories().size()-1).getStatus();
-        if (!postStatus.equals(PostState.CREATED)) throw new StatusNotValidException("Post state: %s is not valid for this action", postStatus);
-        postFindHistory(postId, histories);
-    }
-
-    @Override
-    @Async
-    public void postFindHistory(Long postId, List<PostHistory> histories) throws JsonProcessingException {
-        PostDto postDto = externalApiClient.findPostById(postId);
-
-        if(postDto == null) {
-            failedHistory(postId, histories);
-            throw new NotFoundException("Post was not found");
-        }
+        histories.add(createHistories(PostState.CREATED, postId));
 
         String messageStr = objectMapper.writeValueAsString(postDto);
         messagePublisher.sendPostMessage("process_posts", messageStr);
 
-        var state = createHistories(PostState.POST_FIND, postId);
-        histories.add(state);
-
-        postOkHistory(postId, postDto, histories);
-    }
-
-    @Override
-    public void postOkHistory(Long postId, PostDto postDto, List<PostHistory> histories) throws JsonProcessingException {
-        Post post = mapPostToEntity(postDto);
-
-        var state = createHistories(PostState.POST_OK, postId);
-        histories.add(state);
+        if (postDto == null) {
+            failedHistory(postId, post, histories);
+            throw new NotFoundException(String.format("Couldn't find posts for post id: %d", postId));
+        }
+        histories.add(createHistories(PostState.POST_FIND, postId));
 
         post.setHistories(histories);
         postRepository.save(post);
 
-        PostState postStatus = post.getHistories().get(post.getHistories().size()-1).getStatus();
-        if (!postStatus.equals(PostState.POST_OK)) throw new StatusNotValidException("Post state: %s is not valid for this action", postStatus);
+        histories.add(createHistories(PostState.POST_OK, postId));
 
-        commentsFindHistory(postId, post, histories);
+        log.info("Post PROCESSED");
+        processComments(postId, post, histories);
     }
+
 
     @Override
     @Async
-    public void commentsFindHistory(Long postId, Post post, List<PostHistory> histories) throws JsonProcessingException {
-        log.info("Post CREATED");
+    public void processComments(Long postId, Post post, List<PostHistory> histories) {
+        log.info("PROCESSING comments");
+
         List<CommentDto> findComments = externalApiClient.findCommentByPostId(postId);
-        if(findComments.isEmpty()) {
-            failedHistory(postId, histories);
-            throw new NotFoundException(String.format("Couldn't find comments for post id: %d" , postId));
+
+        if (findComments.isEmpty()) {
+            failedHistory(postId, post, histories);
+            throw new NotFoundException(String.format("Couldn't find comments for post id: %d", postId));
         }
 
-        var state = createHistories(PostState.COMMENTS_FIND, postId);
-        histories.add(state);
+        histories.add(createHistories(PostState.COMMENTS_FIND, postId));
 
-        post.setHistories(histories);
-        postRepository.save(post);
-
-        PostState postStatus = post.getHistories().get(post.getHistories().size()-1).getStatus();
-        if (!postStatus.equals(PostState.COMMENTS_FIND)) throw new StatusNotValidException("Post state: %s is not valid for this action", postStatus);
-
-        commentsOkHistory(postId, post, histories, findComments);
-    }
-
-    @Override
-    public void commentsOkHistory(Long postId, Post post, List<PostHistory> histories, List<CommentDto> findComments) {
         List<Comment> comments = new ArrayList<>();
 
         for (CommentDto foundComment : findComments) {
@@ -138,83 +110,77 @@ public class PostServiceImpl implements PostService {
             comments.add(comment);
         }
 
+        histories.add(createHistories(PostState.COMMENTS_OK, postId));
+
         post.setComments(comments);
-
-        var state = createHistories(PostState.COMMENTS_OK, postId);
-        histories.add(state);
-
         post.setHistories(histories);
         postRepository.save(post);
 
-        PostState postStatus = post.getHistories().get(post.getHistories().size()-1).getStatus();
-        if (!postStatus.equals(PostState.COMMENTS_OK)) throw new StatusNotValidException("Post state: %s is not valid for this action", postStatus);
-
-        log.info("Comment's OK");
+        log.info("Comments PROCESSED");
         enabledHistory(postId, post, histories);
     }
 
     @Override
     public void enabledHistory(Long postId, Post post, List<PostHistory> histories) {
-        PostHistory enabledHistory = new PostHistory(PostState.ENABLED, postId);
-        postHistoryRepository.save(enabledHistory);
-        histories.add(enabledHistory);
-
+        histories.add(createHistories(PostState.ENABLED, postId));
         post.setHistories(histories);
         postRepository.save(post);
+
         log.info("Post ENABLED");
     }
 
     @Override
-    public void failedHistory(Long postId, List<PostHistory> histories) {
-        var state = createHistories(PostState.FAILED, postId);
-        histories.add(state);
-
-        var post = findPostInDatabase(postId);
+    public void failedHistory(Long postId, Post post, List<PostHistory> histories) {
+        histories.add(createHistories(PostState.FAILED, postId));
         post.setHistories(histories);
-
         postRepository.save(post);
+
         log.info("Post FAILED to be processed");
+
         disablePost(postId);
     }
 
     @Override
+    @Async
     public void disablePost(Long postId) {
         idSizeValidation(postId);
-        var post = findPostInDatabase(postId);;
+        var post = findPostInDatabase(postId);
+        ;
 
         List<PostHistory> histories = post.getHistories();
-        PostState postStatus = post.getHistories().get(post.getHistories().size()-1).getStatus();
-        if (!postStatus.equals(PostState.ENABLED) && postStatus.equals(PostState.FAILED)) throw new StatusNotValidException("Post state: %s is not valid for this action", postStatus);
 
-        var state = createHistories(PostState.DISABLED, postId);
-        histories.add(state);
+        PostState postStatus = post.getHistories().get(post.getHistories().size() - 1).getStatus();
+        if (!postStatus.equals(PostState.ENABLED) && postStatus.equals(PostState.FAILED))
+            throw new StatusNotValidException("Post state: %s is not valid for this action", postStatus);
 
+        histories.add(createHistories(PostState.DISABLED, postId));
         post.setHistories(histories);
+
         log.info("Post DISABLED");
     }
 
     @Override
+    @Async
     public void reprocessPost(Long postId) throws JsonProcessingException {
         idSizeValidation(postId);
         var post = findPostInDatabase(postId);
 
         List<PostHistory> histories = post.getHistories();
-        PostState postStatus = post.getHistories().get(post.getHistories().size()-1).getStatus();
-        if (!postStatus.equals(PostState.ENABLED) && postStatus.equals(PostState.DISABLED)) throw new StatusNotValidException("Post state: %s is not valid for this action", postStatus);
+        PostState postStatus = post.getHistories().get(post.getHistories().size() - 1).getStatus();
+        if (!postStatus.equals(PostState.ENABLED) && postStatus.equals(PostState.DISABLED))
+            throw new StatusNotValidException("Post state: %s is not valid for this action", postStatus);
 
-        var state = createHistories(PostState.UPDATING, postId);
-        histories.add(state);
-
+        histories.add(createHistories(PostState.UPDATING, postId));
         post.setHistories(histories);
         postRepository.save(post);
 
-        postFindHistory(postId, histories);
+        processPost(postId);
         log.info("Post will be UPDATED");
     }
 
     @Override
     public List<Post> queryPosts() {
-        if(postRepository.findAll().isEmpty()) throw new NotFoundException("Database is empty!");
+        if (postRepository.findAll().isEmpty()) throw new NotFoundException("Database is empty!");
         log.info("Printing all posts");
         return postRepository.findAll();
     }
@@ -239,7 +205,8 @@ public class PostServiceImpl implements PostService {
 
     private Post findPostInDatabase(Long postId) {
         Optional<Post> postOptional = postRepository.findPostById(postId);
-        if(postOptional.isEmpty()) throw new InvalidPostIdValueException(String.format("ID %d is not present on database", postId));
+        if (postOptional.isEmpty())
+            throw new InvalidPostIdValueException(String.format("ID %d is not present on database", postId));
         return postOptional.get();
     }
 }

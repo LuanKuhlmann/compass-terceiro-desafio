@@ -13,9 +13,6 @@ import java.util.List;
 @FeignClient(value = "ExternalApiClient", url = "https://jsonplaceholder.typicode.com/posts")
 public interface ExternalApiClient {
 
-    @GetMapping
-    List<PostDto> getAllPost();
-
     @GetMapping("/{postId}")
     PostDto findPostById(@PathVariable("postId") long postId);
 

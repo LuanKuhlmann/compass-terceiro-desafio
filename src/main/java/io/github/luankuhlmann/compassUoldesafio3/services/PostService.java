@@ -14,15 +14,9 @@ public interface PostService {
 
     void processPost(Long postId) throws JsonProcessingException;
 
-    void postFindHistory(Long postId, List<PostHistory> histories) throws JsonProcessingException;
+    void processComments(Long postId, Post post, List<PostHistory> histories) throws JsonProcessingException;
 
-    void postOkHistory(Long postId, PostDto postDto, List<PostHistory> histories) throws JsonProcessingException;
-
-    void commentsFindHistory(Long postId, Post post, List<PostHistory> histories) throws JsonProcessingException;
-
-    void commentsOkHistory(Long postId, Post post, List<PostHistory> histories, List<CommentDto> findComments) throws JsonProcessingException;
-
-    void failedHistory(Long postId, List<PostHistory> histories);
+    void failedHistory(Long postId, Post post, List<PostHistory> histories);
 
     void enabledHistory(Long postId, Post post, List<PostHistory> histories);
 

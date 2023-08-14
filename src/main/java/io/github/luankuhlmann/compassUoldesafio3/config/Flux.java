@@ -10,6 +10,12 @@ import java.util.concurrent.Executor;
 public class Flux {
     @Bean(name = "pool-executer")
     public Executor taskExecutor() {
-        return new ThreadPoolTaskExecutor();
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(10);
+        executor.setMaxPoolSize(20);
+        executor.setQueueCapacity(300);
+        executor.setThreadNamePrefix("THREAD POOL -");
+        executor.initialize();
+        return executor;
     }
 }
