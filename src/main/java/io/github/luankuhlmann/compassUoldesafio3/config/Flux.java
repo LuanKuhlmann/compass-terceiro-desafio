@@ -8,7 +8,6 @@ import java.util.concurrent.Executor;
 
 @Configuration
 public class Flux {
-
     @Bean(name = "pool-executer")
     public Executor taskExecutor() {
         return new ThreadPoolTaskExecutor();

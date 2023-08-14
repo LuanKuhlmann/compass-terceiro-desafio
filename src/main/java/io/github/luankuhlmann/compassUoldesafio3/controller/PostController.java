@@ -19,7 +19,6 @@ import java.util.List;
 @Validated
 @RequestMapping("/posts")
 public class PostController {
-
     private final PostService postService;
 
     @PostMapping("/{postId}")
