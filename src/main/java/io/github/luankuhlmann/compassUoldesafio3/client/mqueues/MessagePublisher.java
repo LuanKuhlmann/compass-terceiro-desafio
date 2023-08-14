@@ -13,8 +13,4 @@ public class MessagePublisher {
     public void sendPostMessage(String queue, final String messageStr) {
         jmsTemplate.send(queue, session -> session.createObjectMessage(messageStr));
     }
-
-    public void sendCommentMessages(String queue, final String messageStr) {
-        jmsTemplate.send(queue, session -> session.createObjectMessage(messageStr));
-    }
 }

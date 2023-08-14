@@ -3,7 +3,6 @@ package io.github.luankuhlmann.compassUoldesafio3.services.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.luankuhlmann.compassUoldesafio3.client.ExternalApiClient;
-import io.github.luankuhlmann.compassUoldesafio3.client.mqueues.MessageConsumer;
 import io.github.luankuhlmann.compassUoldesafio3.client.mqueues.MessagePublisher;
 import io.github.luankuhlmann.compassUoldesafio3.domain.enums.PostState;
 import io.github.luankuhlmann.compassUoldesafio3.domain.model.Comment;
@@ -116,9 +115,6 @@ public class PostServiceImpl implements PostService {
             failedHistory(postId, histories);
             throw new NotFoundException(String.format("Couldn't find comments for post id: %d" , postId));
         }
-
-        String messageStr = objectMapper.writeValueAsString(findComments);
-        messagePublisher.sendCommentMessages("process_comments", messageStr);
 
         var state = createHistories(PostState.COMMENTS_FIND, postId);
         histories.add(state);

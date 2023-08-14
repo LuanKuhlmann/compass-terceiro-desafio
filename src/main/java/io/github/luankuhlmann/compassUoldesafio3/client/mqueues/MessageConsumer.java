@@ -7,10 +7,6 @@ import io.github.luankuhlmann.compassUoldesafio3.dto.PostDto;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 @Component
 public class MessageConsumer {
 
@@ -22,16 +18,14 @@ public class MessageConsumer {
         System.out.println("Consuming post " + postDto.getId());
     }
 
-//    @JmsListener(destination = "process_comments")
-//    public void receiveMessageFromComments(String messageStr) throws JsonProcessingException {
-//        ObjectMapper mapper = new ObjectMapper();
-//        List<CommentDto> commentList = new ArrayList<>();
-//        CommentDto[] receivedComments = mapper.readValue(messageStr, CommentDto[].class);
-//        commentList.addAll(Arrays.asList(receivedComments));
-//
-//        for (CommentDto commentDto : receivedComments) {
-//            System.out.println("Consuming comment " + commentDto.getId());
-//        }
-//    }
+    @JmsListener(destination = "process_comments")
+    public void receiveMessageFromComments(String messageStr) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        CommentDto[] receivedComments = mapper.readValue(messageStr, CommentDto[].class);
+
+        for (CommentDto commentDto : receivedComments) {
+            System.out.println("Consuming comment " + commentDto.getId());
+        }
+    }
 
 }
