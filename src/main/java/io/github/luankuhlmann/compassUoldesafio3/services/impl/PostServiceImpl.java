@@ -52,6 +52,7 @@ public class PostServiceImpl implements PostService {
     private final MessagePublisher messagePublisher;
 
     @Override
+    @Async
     public void processPost(Long postId) throws JsonProcessingException {
         idSizeValidation(postId);
         log.info("Processing post");
@@ -107,7 +108,6 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    @Async
     public void commentsFindHistory(Long postId, Post post, List<PostHistory> histories) throws JsonProcessingException {
         log.info("Post CREATED");
         List<CommentDto> findComments = externalApiClient.findCommentByPostId(postId);
