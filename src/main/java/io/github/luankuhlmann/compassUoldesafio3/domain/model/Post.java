@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "post")
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
@@ -24,17 +23,11 @@ public class Post {
     private String title;
     private String body;
 
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "post_id", referencedColumnName = "id")
     private List<Comment> comments = new ArrayList<>();
 
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "post_id", referencedColumnName = "id")
     private List<PostHistory> histories;
-
-//    public Post(Long id) {
-//        this.id = id;
-//        this.comments = new ArrayList<>();
-//        this.histories = new ArrayList<>();
-//    }
 }

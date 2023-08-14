@@ -1,4 +1,4 @@
-package io.github.luankuhlmann.compassUoldesafio3.domain;
+package io.github.luankuhlmann.compassUoldesafio3.domain.enums;
 
 public enum PostState {
     CREATED,

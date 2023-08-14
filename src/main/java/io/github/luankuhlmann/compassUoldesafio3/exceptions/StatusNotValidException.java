@@ -1,6 +1,6 @@
 package io.github.luankuhlmann.compassUoldesafio3.exceptions;
 
-import io.github.luankuhlmann.compassUoldesafio3.domain.PostState;
+import io.github.luankuhlmann.compassUoldesafio3.domain.enums.PostState;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 

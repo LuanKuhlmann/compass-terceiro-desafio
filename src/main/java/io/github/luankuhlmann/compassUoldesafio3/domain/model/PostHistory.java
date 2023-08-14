@@ -1,13 +1,12 @@
 package io.github.luankuhlmann.compassUoldesafio3.domain.model;
 
-import io.github.luankuhlmann.compassUoldesafio3.domain.PostState;
+import io.github.luankuhlmann.compassUoldesafio3.domain.enums.PostState;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
 
 @Entity
-@Table(name = "history")
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
