@@ -20,7 +20,7 @@ public interface PostService {
 
     void commentsFindHistory(Long postId, Post post, List<PostHistory> histories) throws JsonProcessingException;
 
-    void commentsOkHistory(Long postId, Post post, List<PostHistory> histories, List<CommentDto> findComments);
+    void commentsOkHistory(Long postId, Post post, List<PostHistory> histories, List<CommentDto> findComments) throws JsonProcessingException;
 
     void failedHistory(Long postId, List<PostHistory> histories);
 

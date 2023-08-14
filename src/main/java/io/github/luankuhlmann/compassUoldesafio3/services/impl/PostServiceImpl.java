@@ -3,6 +3,7 @@ package io.github.luankuhlmann.compassUoldesafio3.services.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.luankuhlmann.compassUoldesafio3.client.ExternalApiClient;
+import io.github.luankuhlmann.compassUoldesafio3.client.mqueues.MessageConsumer;
 import io.github.luankuhlmann.compassUoldesafio3.client.mqueues.MessagePublisher;
 import io.github.luankuhlmann.compassUoldesafio3.domain.enums.PostState;
 import io.github.luankuhlmann.compassUoldesafio3.domain.model.Comment;
@@ -52,7 +53,6 @@ public class PostServiceImpl implements PostService {
     private final MessagePublisher messagePublisher;
 
     @Override
-    @Async
     public void processPost(Long postId) throws JsonProcessingException {
         idSizeValidation(postId);
         log.info("Processing post");
@@ -73,6 +73,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @Async
     public void postFindHistory(Long postId, List<PostHistory> histories) throws JsonProcessingException {
         PostDto postDto = externalApiClient.findPostById(postId);
 
@@ -106,8 +107,8 @@ public class PostServiceImpl implements PostService {
         commentsFindHistory(postId, post, histories);
     }
 
-    @Async
     @Override
+    @Async
     public void commentsFindHistory(Long postId, Post post, List<PostHistory> histories) throws JsonProcessingException {
         log.info("Post CREATED");
         List<CommentDto> findComments = externalApiClient.findCommentByPostId(postId);

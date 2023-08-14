@@ -22,16 +22,16 @@ public class MessageConsumer {
         System.out.println("Consuming post " + postDto.getId());
     }
 
-    @JmsListener(destination = "process_comments")
-    public void receiveMessageFromComments(String messageStr) throws JsonProcessingException {
-        ObjectMapper mapper = new ObjectMapper();
-        List<CommentDto> commentList = new ArrayList<>();
-        CommentDto[] receivedComments = mapper.readValue(messageStr, CommentDto[].class);
-        commentList.addAll(Arrays.asList(receivedComments));
-
-        for (CommentDto commentDto : receivedComments) {
-            System.out.println("Consuming comment " + commentDto.getId());
-        }
-    }
+//    @JmsListener(destination = "process_comments")
+//    public void receiveMessageFromComments(String messageStr) throws JsonProcessingException {
+//        ObjectMapper mapper = new ObjectMapper();
+//        List<CommentDto> commentList = new ArrayList<>();
+//        CommentDto[] receivedComments = mapper.readValue(messageStr, CommentDto[].class);
+//        commentList.addAll(Arrays.asList(receivedComments));
+//
+//        for (CommentDto commentDto : receivedComments) {
+//            System.out.println("Consuming comment " + commentDto.getId());
+//        }
+//    }
 
 }
