@@ -29,5 +29,5 @@ public class Post {
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "post_id", referencedColumnName = "id")
-    private List<PostHistory> histories;
+    private List<PostHistory> histories = new ArrayList<>();
 }
