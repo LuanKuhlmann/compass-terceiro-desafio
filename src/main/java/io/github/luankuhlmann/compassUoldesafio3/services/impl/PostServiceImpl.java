@@ -109,7 +109,6 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public void commentsFindHistory(Long postId, Post post, List<PostHistory> histories) throws JsonProcessingException {
-        log.info("Post CREATED");
         List<CommentDto> findComments = externalApiClient.findCommentByPostId(postId);
         if(findComments.isEmpty()) {
             failedHistory(postId, histories);
