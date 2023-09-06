@@ -159,7 +159,7 @@ public class PostServiceImpl implements PostService {
     @Override
     public void disablePost(Long postId) {
         idSizeValidation(postId);
-        var post = findPostInDatabase(postId);;
+        var post = findPostInDatabase(postId);
 
         List<PostHistory> histories = post.getHistories();
         PostState postStatus = post.getHistories().get(post.getHistories().size()-1).getStatus();
