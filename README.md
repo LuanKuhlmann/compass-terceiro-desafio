@@ -1,5 +1,5 @@
 # compass third challenge
-CompassFlix is a movie rental themed RESTful API for the UOL Compass Challenge 2. Our API can handle data operations using HTTP verbs (GET, POST, PUT, DELETE). In the following steps, you will see how easy it is to register, consult, update, and delete a movie!
+This BLOG API is an API designed around a blog theme, which processes new post data from an external resource and tracks the Progress Status for the UOL Compass Challenge 3.
 
 ### 🛠️ Technologies
 The following technologies were used in this project:
