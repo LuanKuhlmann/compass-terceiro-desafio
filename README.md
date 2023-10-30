@@ -25,38 +25,34 @@ git clone https://github.com/LuanKuhlmann/compass-terceiro-desafio.git
 
 Now, you can open the directory in your IDE and navigate to the main class called 'CompassUolDesafio3Application' and press the 'Run' icon to execute the code! Next, you can open your preferred API testing tool and try the HTTP operations.
 
-(Note: the main class is placed in "src/main/java/io/github/luankuhlmann/compassUoldesafio3/CompassUolDesafio3Application.java")
-
 ### ✅ Testing HTTP: Step by step ###
 These are the commands you can try in your browser or testing software. We recommend using Postman and following the steps in order.
 
-* ▶️ GET
+* ▶️ POST -> To process a new post, use an ID between 1 and 100 in place of {postId}:
+* 
+```bash
+[http://localhost:8080/posts](http://localhost:8080/posts/{postId})
+```
 
-  With this first command, you can see all the registered movies. Don't worry, we have already prepared the database with them for you.
+This will set the Progress Status to ENABLE if successful or FAILED if there's an issue.
+
+* ▶️ GET ALL -> Retrieve all registered posts, associated comments, and their Progress Status History using:
+
 ```bash
 http://localhost:8080/posts
 ```
-(Note: if you can't see any post, you can proceed to the POST step to add a new one)
 
-* ▶️ POST
-
-  Now, you will register a new POST. You have to use the following URL:
+* ▶️ PUT - > Reprocess a post using:
+* 
 ```bash
-http://localhost:8080/posts/{id} where {id} should be replaced by a number between 1 and 100
+http://localhost:8080/posts/{postId}
 ```
 
-* ▶️ PUT
-
-  You have to put the ID of the post you want to update:
-```bash
-http://localhost:8080/posts/{id}
-```
-
-* ▶️ DELETE
+* ▶️ DELETE -> Delete a post using the same command as before. The post's status will be set to DISABLE.
 
   To disable a post, use the same logic as before; just copy and paste the ID of the one you want to disable:
 ```bash
-http://localhost:8080/posts/{id}
+http://localhost:8080/posts/{postId}
 ```
 
 ### 💡 Methodologies
